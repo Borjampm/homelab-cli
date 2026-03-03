@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7](https://github.com/Borjampm/homelab-cli/compare/v0.1.6...v0.1.7) - 2026-03-03
+
+### Fixed
+
+- wrap remote commands in interactive shell to source .bashrc
+
 ## [0.1.6](https://github.com/Borjampm/homelab-cli/compare/v0.1.5...v0.1.6) - 2026-03-03
 
 ### Fixed
