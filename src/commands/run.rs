@@ -52,9 +52,10 @@ pub async fn run(args: &crate::cli::RunArgs) -> Result<()> {
 
     for setup_command in &args.setup_commands {
         let full_setup = build_setup_command(remote_base, &project_name, setup_command);
+        let interactive_setup = super::wrap_in_interactive_shell(&full_setup);
         info!(command = %full_setup, "running setup command");
         let status = session
-            .raw_command(&full_setup)
+            .raw_command(&interactive_setup)
             .status()
             .await
             .with_context(|| format!("setup command failed to execute: {setup_command}"));
@@ -72,6 +73,7 @@ pub async fn run(args: &crate::cli::RunArgs) -> Result<()> {
     }
 
     let full_command = build_remote_command(remote_base, &project_name, &args.remote.command);
+    let interactive_command = super::wrap_in_interactive_shell(&full_command);
 
     let watcher_host = host.to_owned();
     let watcher_dir = local_dir.clone();
@@ -86,7 +88,7 @@ pub async fn run(args: &crate::cli::RunArgs) -> Result<()> {
 
     info!(command = %full_command, "starting remote command");
 
-    let mut cmd = session.raw_command(&full_command);
+    let mut cmd = session.raw_command(&interactive_command);
     let status = tokio::select! {
         status = cmd.status() => Some(status),
         _ = tokio::signal::ctrl_c() => {

@@ -51,6 +51,30 @@ fn exec_nonexistent_host_fails() {
         .failure();
 }
 
+#[test]
+fn exec_sources_bashrc() {
+    require_docker_lab!();
+    ensure_docker_lab_running();
+
+    ssh_command_on_server("echo 'export HOMELAB_TEST_VAR=from_bashrc' >> /root/.bashrc");
+
+    let mut command = homelab_command();
+    command
+        .args([
+            "exec",
+            "--on",
+            "server",
+            "--",
+            "printenv",
+            "HOMELAB_TEST_VAR",
+        ])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("from_bashrc"));
+
+    ssh_command_on_server("sed -i '/HOMELAB_TEST_VAR/d' /root/.bashrc");
+}
+
 // --- Sync Tests ---
 
 #[test]
