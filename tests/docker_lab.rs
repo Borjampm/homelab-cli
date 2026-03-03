@@ -414,6 +414,111 @@ fn run_binary_output() {
 }
 
 #[test]
+fn run_setup_installs_dependency() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[
+        ("requirements.txt", "cowsay"),
+        ("app.py", "import cowsay\ncowsay.cow('setup works')"),
+    ]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args([
+            "run",
+            "--on",
+            "server",
+            "--setup",
+            "pip install --break-system-packages -r requirements.txt",
+            "--",
+            "python3",
+            "app.py",
+        ])
+        .current_dir(project.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("setup works"));
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_multiple_setup_commands() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[(
+        "check.sh",
+        "#!/bin/sh\ncat config.txt && test -d datadir && echo 'both present'",
+    )]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args([
+            "run",
+            "--on",
+            "server",
+            "--setup",
+            "echo 'myconfig' > config.txt",
+            "--setup",
+            "mkdir -p datadir",
+            "--",
+            "sh",
+            "check.sh",
+        ])
+        .current_dir(project.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("both present"));
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_failing_setup_aborts() {
+    require_docker_lab!();
+
+    let project =
+        create_temp_project(&[("should_not_run.sh", "#!/bin/sh\necho 'main command ran'")]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args([
+            "run",
+            "--on",
+            "server",
+            "--setup",
+            "false",
+            "--",
+            "sh",
+            "should_not_run.sh",
+        ])
+        .current_dir(project.path())
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("main command ran").not());
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
 fn run_command_not_found() {
     require_docker_lab!();
 

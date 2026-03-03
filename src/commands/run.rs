@@ -24,6 +24,10 @@ fn build_remote_command(remote_base: &str, project_name: &str, command: &[String
     )
 }
 
+fn build_setup_command(remote_base: &str, project_name: &str, setup_command: &str) -> String {
+    format!("cd {remote_base}{project_name} && {setup_command}")
+}
+
 fn build_kill_command(command: &[String]) -> String {
     let pattern = command.join(" ");
     format!("pkill -f '{pattern}' 2>/dev/null; true")
@@ -45,6 +49,20 @@ pub async fn run(args: &crate::cli::RunArgs) -> Result<()> {
     let tunnels = crate::commands::exec::spawn_port_forwards(host, &args.remote.forward)?;
 
     let project_name = project_name_from_path(&local_dir)?;
+
+    for setup_command in &args.setup_commands {
+        let full_setup = build_setup_command(remote_base, &project_name, setup_command);
+        info!(command = %full_setup, "running setup command");
+        let status = session
+            .raw_command(&full_setup)
+            .status()
+            .await
+            .with_context(|| format!("setup command failed to execute: {setup_command}"))?;
+        if !status.success() {
+            anyhow::bail!("setup command failed: {setup_command}");
+        }
+    }
+
     let full_command = build_remote_command(remote_base, &project_name, &args.remote.command);
 
     let watcher_host = host.to_owned();
@@ -171,5 +189,24 @@ mod tests {
     fn project_name_from_path_returns_error_for_root() {
         let path = PathBuf::from("/");
         assert!(project_name_from_path(&path).is_err());
+    }
+
+    #[test]
+    fn build_setup_command_produces_cd_and_command() {
+        let cmd = build_setup_command("~/projects/", "myapp", "yarn install");
+        assert_eq!(cmd, "cd ~/projects/myapp && yarn install");
+    }
+
+    #[test]
+    fn build_setup_command_preserves_complex_shell_expression() {
+        let cmd = build_setup_command(
+            "~/projects/",
+            "myapp",
+            "pip install -r requirements.txt && echo done",
+        );
+        assert_eq!(
+            cmd,
+            "cd ~/projects/myapp && pip install -r requirements.txt && echo done"
+        );
     }
 }

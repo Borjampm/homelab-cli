@@ -38,7 +38,8 @@ fn try_http_get(port: u16, path: &str) -> Option<HttpResponse> {
         .set_read_timeout(Some(Duration::from_secs(10)))
         .unwrap();
 
-    let request = format!("GET {path} HTTP/1.1\r\nHost: localhost:{port}\r\nConnection: close\r\n\r\n");
+    let request =
+        format!("GET {path} HTTP/1.1\r\nHost: localhost:{port}\r\nConnection: close\r\n\r\n");
     stream.write_all(request.as_bytes()).ok()?;
 
     let response_bytes = read_response_tolerant(&mut stream);
@@ -46,8 +47,7 @@ fn try_http_get(port: u16, path: &str) -> Option<HttpResponse> {
 }
 
 fn http_get(port: u16, path: &str) -> HttpResponse {
-    try_http_get(port, path)
-        .unwrap_or_else(|| panic!("failed to connect to port {port}"))
+    try_http_get(port, path).unwrap_or_else(|| panic!("failed to connect to port {port}"))
 }
 
 fn http_post(port: u16, path: &str, json_body: &str) -> HttpResponse {
@@ -251,11 +251,7 @@ fn server_fullstack_api_and_web() {
     require_docker_lab!();
 
     let (project_dir, _project_name) = create_server_project("fullstack-app");
-    let _server = spawn_server(
-        project_dir.path(),
-        &[8083, 8084],
-        &["python3", "server.py"],
-    );
+    let _server = spawn_server(project_dir.path(), &[8083, 8084], &["python3", "server.py"]);
 
     wait_for_port(8083, 15);
     wait_for_port(8084, 15);
@@ -317,9 +313,7 @@ fn server_api_post_malformed_json() {
 
     let malformed = http_post(8081, "/items", "not valid json{{{");
     assert!(
-        malformed.status_code == 500
-            || malformed.status_code == 400
-            || malformed.status_code == 0,
+        malformed.status_code == 500 || malformed.status_code == 400 || malformed.status_code == 0,
         "expected 400, 500, or connection reset (0), got {}",
         malformed.status_code
     );

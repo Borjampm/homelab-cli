@@ -88,4 +88,8 @@ pub struct ExecArgs {
 pub struct RunArgs {
     #[command(flatten)]
     pub remote: RemoteCommandArgs,
+
+    /// Commands to run once after sync but before the main command
+    #[arg(long = "setup")]
+    pub setup_commands: Vec<String>,
 }
