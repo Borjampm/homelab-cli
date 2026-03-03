@@ -47,6 +47,19 @@ docker compose -f docker/compose.yaml down      # Stop lab
 ssh -i docker/lab_key -p 2220 root@localhost     # Connect to "server" node
 ```
 
+## Development Flow
+
+1. **Pull latest main**: `git pull origin main`
+2. **Create a worktree**: work in an isolated worktree to keep main clean
+3. **Implement the feature**: add new functionality following the coding conventions below
+4. **Create a test plan**: define what to test manually against the Docker lab and what to cover with automated tests
+5. **Manual testing with the homelab**: use `cargo run` against the Docker lab environment to verify the feature works end-to-end
+6. **Bug fix and iterate**: fix issues found during testing, re-test, repeat until solid
+7. **Clean code review**: ensure readable code — descriptive names, no unnecessary comments, idiomatic Rust, no dead code
+8. **Write tests**: add unit tests (in-file `#[cfg(test)]` modules) and integration tests (in `tests/`) as appropriate
+9. **Format and lint**: `cargo fmt` then `cargo clippy` — fix all warnings
+10. **Create a pull request**: push the branch and open a PR against main. Merging to main triggers the release pipeline automatically (release-plz opens a Release PR, merging that publishes to crates.io and builds binaries)
+
 ## Documentation
 
 - When adding a feature that requires a new system dependency (e.g. a binary that gets shelled out to), always update the Prerequisites section of README.md.
