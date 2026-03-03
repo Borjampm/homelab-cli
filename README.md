@@ -25,6 +25,7 @@ src/
 - Docker (for the local lab environment)
 - OpenSSH client (used by the `openssh` crate under the hood)
 - [GNU rsync](https://rsync.samba.org/) 3.1+ (required for `sync` and `run` commands — macOS ships with rsync 2.x, install via `brew install rsync`)
+- [Tailscale](https://tailscale.com/) (required for the `nodes` command — queries `tailscale status --json`)
 
 ### Build and run
 
@@ -38,14 +39,20 @@ cargo fmt                # Format
 
 ### Local lab environment
 
-A Docker-based simulation of the home lab lives in `docker/`. It spins up SSH-enabled Alpine containers that mimic real Tailscale nodes.
+A Docker-based simulation of the home lab lives in `docker/`. It spins up SSH-enabled Alpine containers that mimic real Tailscale nodes. See [docs/docker-lab-setup.md](docs/docker-lab-setup.md) for full setup instructions (building the image, SSH config, known_hosts, etc.).
+
+The CLI resolves host names through `~/.ssh/config`, so you need entries mapping each node to `localhost` with the right port and key. Quick start:
 
 ```bash
+# Build the image (one time)
+docker build -t homelab-node -f docker/Dockerfile.node docker/
+chmod 600 docker/lab_key
+
 # Start the lab (3 nodes: laptop, server, beast)
 docker compose -f docker/compose.yaml up -d
 
 # Verify connectivity
-ssh -i docker/lab_key -p 2220 root@localhost hostname
+ssh server echo "ok"
 
 # Stop the lab
 docker compose -f docker/compose.yaml down

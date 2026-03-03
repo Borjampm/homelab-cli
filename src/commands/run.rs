@@ -9,8 +9,19 @@ fn project_name_from_path(path: &Path) -> Result<String> {
         .map(|name| name.to_string_lossy().into_owned())
 }
 
+fn shell_escape_command(command: &[String]) -> String {
+    command
+        .iter()
+        .map(|arg| shell_escape::escape(arg.into()))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 fn build_remote_command(remote_base: &str, project_name: &str, command: &[String]) -> String {
-    format!("cd {remote_base}{project_name} && {}", command.join(" "))
+    format!(
+        "cd {remote_base}{project_name} && {}",
+        shell_escape_command(command)
+    )
 }
 
 fn build_kill_command(command: &[String]) -> String {
@@ -123,6 +134,30 @@ mod tests {
     fn build_kill_command_with_single_word() {
         let cmd = build_kill_command(&["python3".into()]);
         assert_eq!(cmd, "pkill -f 'python3' 2>/dev/null; true");
+    }
+
+    #[test]
+    fn build_remote_command_escapes_arguments_with_spaces() {
+        let cmd = build_remote_command(
+            "~/projects/",
+            "myapp",
+            &[
+                "python3".into(),
+                "-c".into(),
+                "import sys; print(sys.argv)".into(),
+                "arg with spaces".into(),
+            ],
+        );
+        assert_eq!(
+            cmd,
+            "cd ~/projects/myapp && python3 -c 'import sys; print(sys.argv)' 'arg with spaces'"
+        );
+    }
+
+    #[test]
+    fn shell_escape_command_handles_special_characters() {
+        let escaped = shell_escape_command(&["echo".into(), "hello'world".into()]);
+        assert_eq!(escaped, "echo 'hello'\\''world'");
     }
 
     #[test]

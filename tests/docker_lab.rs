@@ -1,157 +1,7 @@
-use std::path::PathBuf;
-use std::process::{Command, Output};
-use std::sync::Once;
+mod common;
 
+use common::*;
 use predicates::prelude::*;
-use tempfile::TempDir;
-
-extern crate libc;
-
-static DOCKER_LAB_STARTED: Once = Once::new();
-
-const COMPOSE_FILE: &str = "docker/compose.yaml";
-const LAB_KEY_RELATIVE: &str = "docker/lab_key";
-const SSH_PORT_SERVER: u16 = 2220;
-const LAB_PORTS: [u16; 3] = [2210, 2220, 2230];
-
-macro_rules! require_docker_lab {
-    () => {
-        if !docker_compose_is_available() {
-            eprintln!("skipping: Docker not available");
-            return;
-        }
-    };
-}
-
-fn project_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-}
-
-fn docker_compose_is_available() -> bool {
-    Command::new("docker")
-        .args(["compose", "version"])
-        .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
-}
-
-fn wait_for_ssh_ready() {
-    let lab_key_path = project_root().join(LAB_KEY_RELATIVE);
-    for _ in 0..10 {
-        let output = Command::new("ssh")
-            .args([
-                "-o",
-                "StrictHostKeyChecking=no",
-                "-o",
-                "UserKnownHostsFile=/dev/null",
-                "-o",
-                "ConnectTimeout=2",
-                "-i",
-                &lab_key_path.to_string_lossy(),
-                "-p",
-                &SSH_PORT_SERVER.to_string(),
-                "root@localhost",
-                "true",
-            ])
-            .output()
-            .expect("failed to run ssh command");
-        if output.status.success() {
-            return;
-        }
-        std::thread::sleep(std::time::Duration::from_secs(1));
-    }
-    panic!("SSH not ready on port {SSH_PORT_SERVER} after 10 retries");
-}
-
-fn update_known_hosts() {
-    let home_dir = std::env::var("HOME").expect("HOME not set");
-    let known_hosts_path = PathBuf::from(&home_dir).join(".ssh/known_hosts");
-
-    let existing_content = std::fs::read_to_string(&known_hosts_path).unwrap_or_default();
-
-    let filtered_lines: Vec<&str> = existing_content
-        .lines()
-        .filter(|line| {
-            !LAB_PORTS
-                .iter()
-                .any(|port| line.contains(&format!("[localhost]:{port}")))
-        })
-        .collect();
-
-    let mut new_keys = String::new();
-    for port in LAB_PORTS {
-        let output = Command::new("ssh-keyscan")
-            .args(["-p", &port.to_string(), "localhost"])
-            .output()
-            .expect("failed to run ssh-keyscan");
-        new_keys.push_str(&String::from_utf8_lossy(&output.stdout));
-    }
-
-    let mut final_content = filtered_lines.join("\n");
-    if !final_content.is_empty() && !final_content.ends_with('\n') {
-        final_content.push('\n');
-    }
-    final_content.push_str(&new_keys);
-
-    std::fs::write(&known_hosts_path, final_content).expect("failed to write known_hosts");
-}
-
-extern "C" fn shutdown_docker_lab() {
-    let _ = Command::new("docker")
-        .args(["compose", "-f", COMPOSE_FILE, "down"])
-        .current_dir(project_root())
-        .status();
-}
-
-fn ensure_docker_lab_running() {
-    DOCKER_LAB_STARTED.call_once(|| {
-        let compose_status = Command::new("docker")
-            .args(["compose", "-f", COMPOSE_FILE, "up", "-d", "--wait"])
-            .current_dir(project_root())
-            .status()
-            .expect("failed to start docker compose");
-
-        assert!(compose_status.success(), "docker compose up failed");
-
-        wait_for_ssh_ready();
-        update_known_hosts();
-
-        unsafe {
-            libc::atexit(shutdown_docker_lab);
-        }
-    });
-}
-
-fn homelab_command() -> assert_cmd::Command {
-    ensure_docker_lab_running();
-
-    assert_cmd::Command::from(std::process::Command::new(assert_cmd::cargo::cargo_bin!(
-        "homelab"
-    )))
-}
-
-fn ssh_command_on_server(remote_command: &str) -> Output {
-    let lab_key_path = project_root().join(LAB_KEY_RELATIVE);
-    Command::new("ssh")
-        .args([
-            "-o",
-            "StrictHostKeyChecking=no",
-            "-o",
-            "UserKnownHostsFile=/dev/null",
-            "-i",
-            &lab_key_path.to_string_lossy(),
-            "-p",
-            &SSH_PORT_SERVER.to_string(),
-            "root@localhost",
-            remote_command,
-        ])
-        .output()
-        .expect("failed to run ssh command")
-}
-
-fn cleanup_remote_project(project_name: &str) {
-    ssh_command_on_server(&format!("rm -rf ~/remote-synced-projects/{project_name}"));
-}
 
 // --- Exec Tests ---
 
@@ -161,7 +11,7 @@ fn exec_echo() {
     let mut command = homelab_command();
 
     command
-        .args(["exec", "--on", "lab-server", "--", "echo", "hello"])
+        .args(["exec", "--on", "server", "--", "echo", "hello"])
         .assert()
         .success()
         .stdout(predicate::str::contains("hello"));
@@ -173,7 +23,7 @@ fn exec_hostname() {
     let mut command = homelab_command();
 
     command
-        .args(["exec", "--on", "lab-server", "--", "hostname"])
+        .args(["exec", "--on", "server", "--", "hostname"])
         .assert()
         .success()
         .stdout(predicate::str::contains("server"));
@@ -185,7 +35,7 @@ fn exec_failing_command() {
     let mut command = homelab_command();
 
     command
-        .args(["exec", "--on", "lab-server", "--", "false"])
+        .args(["exec", "--on", "server", "--", "false"])
         .assert()
         .failure();
 }
@@ -203,21 +53,6 @@ fn exec_nonexistent_host_fails() {
 
 // --- Sync Tests ---
 
-fn create_temp_project(files: &[(&str, &str)]) -> TempDir {
-    let temp_dir = tempfile::Builder::new()
-        .prefix("test-project-")
-        .tempdir()
-        .expect("failed to create temp project dir");
-    for (name, content) in files {
-        let file_path = temp_dir.path().join(name);
-        if let Some(parent) = file_path.parent() {
-            std::fs::create_dir_all(parent).expect("failed to create parent dirs");
-        }
-        std::fs::write(&file_path, content).expect("failed to write test file");
-    }
-    temp_dir
-}
-
 #[test]
 fn sync_push_creates_remote_directory() {
     require_docker_lab!();
@@ -232,7 +67,7 @@ fn sync_push_creates_remote_directory() {
 
     let mut command = homelab_command();
     command
-        .args(["sync", "push", "--to", "lab-server"])
+        .args(["sync", "push", "--to", "server"])
         .current_dir(project.path())
         .assert()
         .success();
@@ -260,7 +95,7 @@ fn sync_push_transfers_file_contents() {
 
     let mut command = homelab_command();
     command
-        .args(["sync", "push", "--to", "lab-server"])
+        .args(["sync", "push", "--to", "server"])
         .current_dir(project.path())
         .assert()
         .success();
@@ -292,7 +127,7 @@ fn sync_push_excludes_git_directory() {
 
     let mut command = homelab_command();
     command
-        .args(["sync", "push", "--to", "lab-server"])
+        .args(["sync", "push", "--to", "server"])
         .current_dir(project.path())
         .assert()
         .success();
@@ -322,14 +157,14 @@ fn sync_list_shows_pushed_project() {
 
     let mut push_command = homelab_command();
     push_command
-        .args(["sync", "push", "--to", "lab-server"])
+        .args(["sync", "push", "--to", "server"])
         .current_dir(project.path())
         .assert()
         .success();
 
     let mut list_command = homelab_command();
     list_command
-        .args(["sync", "list", "--on", "lab-server"])
+        .args(["sync", "list", "--on", "server"])
         .assert()
         .success()
         .stdout(predicate::str::contains(&project_name));
@@ -351,14 +186,14 @@ fn sync_remove_deletes_project() {
 
     let mut push_command = homelab_command();
     push_command
-        .args(["sync", "push", "--to", "lab-server"])
+        .args(["sync", "push", "--to", "server"])
         .current_dir(project.path())
         .assert()
         .success();
 
     let mut remove_command = homelab_command();
     remove_command
-        .args(["sync", "remove", "--on", "lab-server", &project_name])
+        .args(["sync", "remove", "--on", "server", &project_name])
         .assert()
         .success();
 
@@ -368,4 +203,240 @@ fn sync_remove_deletes_project() {
         !dir_check.status.success(),
         "remote project directory should be deleted"
     );
+}
+
+// --- Run Tests ---
+
+#[test]
+fn run_basic_stdout() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[("hello.sh", "#!/bin/sh\necho 'hello from run'")]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args(["run", "--on", "server", "--", "sh", "hello.sh"])
+        .current_dir(project.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("hello from run"));
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_stderr_output() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[(
+        "both.sh",
+        "#!/bin/sh\necho 'on stdout'\necho 'on stderr' >&2",
+    )]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    let assert = command
+        .args(["run", "--on", "server", "--", "sh", "both.sh"])
+        .current_dir(project.path())
+        .assert()
+        .success();
+
+    let output = assert.get_output();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    assert!(
+        stdout.contains("on stdout") || stderr.contains("on stdout"),
+        "stdout content should appear somewhere"
+    );
+    assert!(
+        stderr.contains("on stderr") || stdout.contains("on stderr"),
+        "stderr content should appear somewhere"
+    );
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_nonzero_exit_code() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[(
+        "fail.sh",
+        "#!/bin/sh\necho 'output before failure'\nexit 42",
+    )]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args(["run", "--on", "server", "--", "sh", "fail.sh"])
+        .current_dir(project.path())
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("output before failure"));
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_python_script() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[("greet.py", "print('hello from python')")]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args(["run", "--on", "server", "--", "python3", "greet.py"])
+        .current_dir(project.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("hello from python"));
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_arguments_with_spaces() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[(
+        "show_args.py",
+        "import sys\nfor arg in sys.argv[1:]:\n    print(arg)",
+    )]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args([
+            "run",
+            "--on",
+            "server",
+            "--",
+            "python3",
+            "show_args.py",
+            "hello world",
+            "foo bar",
+        ])
+        .current_dir(project.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("hello world"))
+        .stdout(predicate::str::contains("foo bar"));
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_large_output() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[(
+        "big.sh",
+        "#!/bin/sh\ni=0\nwhile [ $i -lt 5000 ]; do\n  echo \"line $i\"\n  i=$((i + 1))\ndone",
+    )]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    let assert = command
+        .args(["run", "--on", "server", "--", "sh", "big.sh"])
+        .current_dir(project.path())
+        .assert()
+        .success();
+
+    let output = assert.get_output();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let line_count = stdout.lines().count();
+    assert!(
+        line_count >= 5000,
+        "expected at least 5000 lines, got {line_count}"
+    );
+    assert!(stdout.contains("line 0"), "should contain first line");
+    assert!(stdout.contains("line 4999"), "should contain last line");
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_binary_output() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[(
+        "binary.sh",
+        "#!/bin/sh\nprintf '\\x00\\x01\\x02\\xff\\xfe'\necho done",
+    )]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args(["run", "--on", "server", "--", "sh", "binary.sh"])
+        .current_dir(project.path())
+        .assert()
+        .success();
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_command_not_found() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[("dummy.txt", "placeholder")]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args([
+            "run",
+            "--on",
+            "server",
+            "--",
+            "nonexistent_command_xyz_12345",
+        ])
+        .current_dir(project.path())
+        .assert()
+        .failure();
+
+    cleanup_remote_project(&project_name);
 }

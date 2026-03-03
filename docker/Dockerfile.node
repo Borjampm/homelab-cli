@@ -25,7 +25,10 @@ RUN ssh-keygen -A && \
     sed -i 's/#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && \
     # Allow the SSH control master multiplexing that the `openssh` crate uses
     sed -i 's/#MaxSessions.*/MaxSessions 20/' /etc/ssh/sshd_config && \
-    echo "StreamLocalBindUnlink yes" >> /etc/ssh/sshd_config
+    echo "StreamLocalBindUnlink yes" >> /etc/ssh/sshd_config && \
+    echo "StrictModes no" >> /etc/ssh/sshd_config && \
+    sed -i 's/AllowTcpForwarding no/AllowTcpForwarding yes/' /etc/ssh/sshd_config && \
+    echo "GatewayPorts no" >> /etc/ssh/sshd_config
 
 # The authorized_keys file will be mounted at runtime
 EXPOSE 22

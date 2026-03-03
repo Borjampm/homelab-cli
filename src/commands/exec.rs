@@ -29,7 +29,13 @@ pub async fn run(args: &crate::cli::ExecArgs) -> Result<()> {
 
     let tunnels = spawn_port_forwards(&args.remote.on_host, &args.remote.forward)?;
 
-    let full_command = args.remote.command.join(" ");
+    let full_command = args
+        .remote
+        .command
+        .iter()
+        .map(|arg| shell_escape::escape(arg.into()))
+        .collect::<Vec<_>>()
+        .join(" ");
     let status = session.raw_command(&full_command).status().await?;
 
     kill_tunnels(tunnels);

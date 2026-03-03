@@ -293,6 +293,7 @@ dependencies = [
  "predicates",
  "serde",
  "serde_json",
+ "shell-escape",
  "tabled",
  "tempfile",
  "tokio",

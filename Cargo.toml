@@ -2,6 +2,12 @@
 name = "homelab"
 version = "0.1.0"
 edition = "2024"
+description = "A CLI tool for managing computers and devices in a home lab via SSH"
+license = "MIT"
+repository = "https://github.com/borjampm/homelab-cli"
+readme = "README.md"
+keywords = ["homelab", "ssh", "cli", "automation", "devops"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 anyhow = "1.0.102"
@@ -9,6 +15,7 @@ clap = { version = "4.5", features = ["derive", "env", "wrap_help"] }
 notify = "8"
 notify-debouncer-mini = "0.5"
 openssh = { version = "0.11", features = ["process-mux"] }
+shell-escape = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tabled = "0.18"
@@ -21,3 +28,14 @@ assert_cmd = "2"
 libc = "0.2"
 predicates = "3"
 tempfile = "3"
+
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+[workspace.metadata.dist]
+cargo-dist-version = "0.31.0"
+ci = ["github"]
+installers = ["shell", "powershell"]
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+allow-dirty = ["ci"]
