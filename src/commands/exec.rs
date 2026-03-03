@@ -36,7 +36,8 @@ pub async fn run(args: &crate::cli::ExecArgs) -> Result<()> {
         .map(|arg| shell_escape::escape(arg.into()))
         .collect::<Vec<_>>()
         .join(" ");
-    let status = session.raw_command(&full_command).status().await?;
+    let interactive_command = super::wrap_in_interactive_shell(&full_command);
+    let status = session.raw_command(&interactive_command).status().await?;
 
     kill_tunnels(tunnels);
 
