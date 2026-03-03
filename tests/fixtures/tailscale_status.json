@@ -1,0 +1,320 @@
+{
+  "Version": "1.94.2-t0a29cf18b-g3f044c9f6",
+  "TUN": true,
+  "BackendState": "Running",
+  "HaveNodeKey": true,
+  "AuthURL": "",
+  "TailscaleIPs": [
+    "100.111.93.67",
+    "fd7a:115c:a1e0::e101:5d45"
+  ],
+  "Self": {
+    "ID": "nNiZ7dV5r811CNTRL",
+    "PublicKey": "nodekey:98f692d3a74402238e0e295b911f327e262fd61ef2aa7a26f0781001d7b48f3e",
+    "HostName": "Borja’s MacBook Air",
+    "DNSName": "borjas-macbook-air-1.tailb32c47.ts.net.",
+    "OS": "macOS",
+    "UserID": 7324756747571594,
+    "TailscaleIPs": [
+      "100.111.93.67",
+      "fd7a:115c:a1e0::e101:5d45"
+    ],
+    "AllowedIPs": [
+      "100.111.93.67/32",
+      "fd7a:115c:a1e0::e101:5d45/128"
+    ],
+    "Addrs": [
+      "190.153.128.247:41642",
+      "190.153.128.247:1478",
+      "192.168.64.1:41641",
+      "192.168.68.105:41641"
+    ],
+    "CurAddr": "",
+    "Relay": "sao",
+    "PeerRelay": "",
+    "RxBytes": 0,
+    "TxBytes": 0,
+    "Created": "2025-07-08T22:30:58.706639886Z",
+    "LastWrite": "0001-01-01T00:00:00Z",
+    "LastSeen": "0001-01-01T00:00:00Z",
+    "LastHandshake": "0001-01-01T00:00:00Z",
+    "Online": true,
+    "ExitNode": false,
+    "ExitNodeOption": false,
+    "Active": false,
+    "PeerAPIURL": [
+      "http://100.111.93.67:58940",
+      "http://[fd7a:115c:a1e0::e101:5d45]:42275"
+    ],
+    "TaildropTarget": 0,
+    "NoFileSharingReason": "",
+    "Capabilities": [
+      "HTTPS://TAILSCALE.COM/s/DEPRECATED-NODE-CAPS#see-https://github.com/tailscale/tailscale/issues/11508",
+      "funnel",
+      "https",
+      "https://tailscale.com/cap/file-sharing",
+      "https://tailscale.com/cap/funnel-ports?ports=443,8443,10000",
+      "https://tailscale.com/cap/is-admin",
+      "https://tailscale.com/cap/is-owner",
+      "https://tailscale.com/cap/ssh",
+      "https://tailscale.com/cap/tailnet-lock",
+      "probe-udp-lifetime",
+      "ssh-behavior-v1",
+      "ssh-env-vars",
+      "store-appc-routes",
+      "tailnet-display-name"
+    ],
+    "CapMap": {
+      "funnel": null,
+      "https": null,
+      "https://tailscale.com/cap/file-sharing": null,
+      "https://tailscale.com/cap/funnel-ports?ports=443,8443,10000": null,
+      "https://tailscale.com/cap/is-admin": null,
+      "https://tailscale.com/cap/is-owner": null,
+      "https://tailscale.com/cap/ssh": null,
+      "https://tailscale.com/cap/tailnet-lock": null,
+      "probe-udp-lifetime": null,
+      "ssh-behavior-v1": null,
+      "ssh-env-vars": null,
+      "store-appc-routes": null,
+      "tailnet-display-name": [
+        "borjampm.github"
+      ]
+    },
+    "InNetworkMap": true,
+    "InMagicSock": false,
+    "InEngine": false,
+    "KeyExpiry": "2026-05-18T15:30:54Z"
+  },
+  "Health": [],
+  "MagicDNSSuffix": "tailb32c47.ts.net",
+  "CurrentTailnet": {
+    "Name": "borjampm.github",
+    "MagicDNSSuffix": "tailb32c47.ts.net",
+    "MagicDNSEnabled": true
+  },
+  "CertDomains": [
+    "borjas-macbook-air-1.tailb32c47.ts.net"
+  ],
+  "Peer": {
+    "nodekey:0f172860a61dd202f75404524f78166682a9f42e229a2b81a044ec1142c53843": {
+      "ID": "nS3UzUYvs311CNTRL",
+      "PublicKey": "nodekey:0f172860a61dd202f75404524f78166682a9f42e229a2b81a044ec1142c53843",
+      "HostName": "home-server",
+      "DNSName": "home-server.tailb32c47.ts.net.",
+      "OS": "linux",
+      "UserID": 7324756747571594,
+      "TailscaleIPs": [
+        "100.77.62.53",
+        "fd7a:115c:a1e0::8501:3e3e"
+      ],
+      "AllowedIPs": [
+        "100.77.62.53/32",
+        "fd7a:115c:a1e0::8501:3e3e/128"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "sao",
+      "PeerRelay": "",
+      "RxBytes": 18876,
+      "TxBytes": 9356,
+      "Created": "2025-06-19T21:26:47.504905342Z",
+      "LastWrite": "2026-02-22T20:57:38.298126125-03:00",
+      "LastSeen": "0001-01-01T00:00:00Z",
+      "LastHandshake": "2026-03-01T12:33:45.663337-03:00",
+      "Online": true,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.77.62.53:39135",
+        "http://[fd7a:115c:a1e0::8501:3e3e]:46579"
+      ],
+      "TaildropTarget": 1,
+      "NoFileSharingReason": "",
+      "sshHostKeys": [
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDWLX/3WI/PMf4AOsbXTI/suD9blQyKLX23XF0GCoAexs9iP3MbEJkYez9i4GmrBUHJksoLGTW2LjBg68djR/5kgcZEEp2n9ZnrcNplopY/inPIHyH/FLUXNNN28KDCCazzRiQdMkX+RqAoXePTBIbNwF9Q3fGg5iorH/uPufI3qIHGvueU2pa0R+n9/MoCCSEVH2OhiSnfQSzflcVabEDDaf48Ao3V8HMpQOuALxXSEN5bD45CPZrbBAYhorYR84iyMVuI0z8GF84GO9QDUQ7TQfWjGrTpYmp4YkcpcHrmDqU37yFgtD+Mn5zyYxeqCuH28mWIoBGLwRC6tXZan+4uyjAtjJPRMgHyCe5curzt02ahPi3DwUDXwC2W0XaQZtuPbS101+iZyaL6+rdWrZ2QerqlKdKdSdTjkTMpGiUT/oXpPg9Uy4SJmBjIMMDgDBr9B4Yb8QK6Upke5FJj8Aa3bz1nZAEUnMJ0nezLuLfrUb1zgm8CIQU0EFsK7MWSJSM=",
+        "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBBbJy4pCFYFnUyjQDxcVSoGf9qmfbIkKBd/sAs2ANa1eEUjRKVYlR/YXUm7c1/AxIowbUxywlpL29q6YvXXGibk=",
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAwEy/43r4Y5QZHDOFFlfpC8pjUahn46JFWF5wNEIxL7"
+      ],
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": true,
+      "KeyExpiry": "2026-07-06T14:14:55Z"
+    },
+    "nodekey:771217230f1d0f18568b5f47807174d72c1b81adb9a7d48970e1a529d346d615": {
+      "ID": "nGBD9hXXKC21CNTRL",
+      "PublicKey": "nodekey:771217230f1d0f18568b5f47807174d72c1b81adb9a7d48970e1a529d346d615",
+      "HostName": "localhost",
+      "DNSName": "iphone-12-mini.tailb32c47.ts.net.",
+      "OS": "iOS",
+      "UserID": 7324756747571594,
+      "TailscaleIPs": [
+        "100.70.163.109",
+        "fd7a:115c:a1e0::8b01:a36e"
+      ],
+      "AllowedIPs": [
+        "100.70.163.109/32",
+        "fd7a:115c:a1e0::8b01:a36e/128"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "sao",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2025-06-19T22:11:31.154956216Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-10T02:58:31.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.70.163.109:55983",
+        "http://[fd7a:115c:a1e0::8b01:a36e]:36944"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false,
+      "KeyExpiry": "2026-07-03T20:03:17Z"
+    },
+    "nodekey:7965ba2ec99c7240ff18f9462fdddec93515aaa23fd101f6be9e0a8d8395fd79": {
+      "ID": "npxDHryq9V11CNTRL",
+      "PublicKey": "nodekey:7965ba2ec99c7240ff18f9462fdddec93515aaa23fd101f6be9e0a8d8395fd79",
+      "HostName": "localhost",
+      "DNSName": "ipad-pro-11-gen-1.tailb32c47.ts.net.",
+      "OS": "iOS",
+      "UserID": 7324756747571594,
+      "TailscaleIPs": [
+        "100.85.253.122",
+        "fd7a:115c:a1e0::8337:fd7a"
+      ],
+      "AllowedIPs": [
+        "100.85.253.122/32",
+        "fd7a:115c:a1e0::8337:fd7a/128"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "sao",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-01-29T00:43:37.041721159Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-07T03:23:31.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.85.253.122:45723",
+        "http://[fd7a:115c:a1e0::8337:fd7a]:44501"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false,
+      "KeyExpiry": "2026-07-28T00:43:37Z"
+    },
+    "nodekey:df504be8b0daeeb8a62503404e60c1c402141a4d8f133838c9579aa409f2d61a": {
+      "ID": "nKh4D7AJuK11CNTRL",
+      "PublicKey": "nodekey:df504be8b0daeeb8a62503404e60c1c402141a4d8f133838c9579aa409f2d61a",
+      "HostName": "desktop-pc",
+      "DNSName": "desktop-pc.tailb32c47.ts.net.",
+      "OS": "linux",
+      "UserID": 7324756747571594,
+      "TailscaleIPs": [
+        "100.114.214.27",
+        "fd7a:115c:a1e0::937:d61b"
+      ],
+      "AllowedIPs": [
+        "100.114.214.27/32",
+        "fd7a:115c:a1e0::937:d61b/128"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "sao",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-01-26T02:28:35.011038602Z",
+      "LastWrite": "2026-02-22T08:42:07.169990709-03:00",
+      "LastSeen": "0001-01-01T00:00:00Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": true,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.114.214.27:52825",
+        "http://[fd7a:115c:a1e0::937:d61b]:33138"
+      ],
+      "TaildropTarget": 1,
+      "NoFileSharingReason": "",
+      "sshHostKeys": [
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDSB6EIiU50Yn81h/2aY3IGZ8EtlwedYQuGcBjhyzSyQ6ePo4YSS8RNEhwGQMrVkpitct7dTFOi1p7zZ04Ov3+4aV9OGsyoXdNIk/94aWZFibEi7JBX9hsaPRBzMqrWd2EltmNNGh9rzSUE3gXOo0jsAlgWfog7A34gdYi5NyP4AXpZtej01ZdWMQCrODlcxD1Bej5J8e3F6b1W/zmkNPOUSKJ0Y+nTbgguS6YCEUw9Anf53GoGEEXFNmkQCVgydgxd7b9rPjNEAhfqhPbCDcrhxuSNLc9WaLaKFORlkVH0wm5HUnkIN58FB6/wiY0zx/oMuhc5yXXVF7HIXpDy7x9YYWxygemHKRLp+owpsIJZLEe1AAPhkJVgvRLSJwK/Usejgm/NOCP5TTefLF0lV7w7YnO/ZXwVXWDbS//OqKeJJ6UzV5YfmKfo2WlWC7kgxFxPgMXo0QvYYkmGyiz5nyVnYPbD5A6kSsX188FRXgJnRM8f6MpXQGYjFs3+xkkMur0=",
+        "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFmLrXDxppQVOZJ6DUa9Ur/cZkh/ZOqSJEZT2qBx9Yn3pB+7x7QEG1jRRAcYkQddtEcXNjQGd0TIp5qqrEa+sNM=",
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICMHZhksd/jThWFQgEi/qoSkrs21W2wTD1gTwaIwW44J"
+      ],
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false,
+      "KeyExpiry": "2026-07-25T02:28:35Z"
+    },
+    "nodekey:e75f36063ce4a73341874e2998a591a14b5fef297be8505ea3c46024d3cebb13": {
+      "ID": "nK6MFbG1xA21CNTRL",
+      "PublicKey": "nodekey:e75f36063ce4a73341874e2998a591a14b5fef297be8505ea3c46024d3cebb13",
+      "HostName": "localhost",
+      "DNSName": "iphone175.tailb32c47.ts.net.",
+      "OS": "iOS",
+      "UserID": 7324756747571594,
+      "TailscaleIPs": [
+        "100.78.187.20",
+        "fd7a:115c:a1e0::d33a:bb14"
+      ],
+      "AllowedIPs": [
+        "100.78.187.20/32",
+        "fd7a:115c:a1e0::d33a:bb14/128"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "sao",
+      "PeerRelay": "",
+      "RxBytes": 752,
+      "TxBytes": 2552,
+      "Created": "2026-02-13T17:48:23.503478137Z",
+      "LastWrite": "2026-02-22T20:57:41.384339875-03:00",
+      "LastSeen": "2026-03-01T16:40:00.1Z",
+      "LastHandshake": "2026-03-01T12:33:59.409529-03:00",
+      "Online": true,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.78.187.20:56022",
+        "http://[fd7a:115c:a1e0::d33a:bb14]:39514"
+      ],
+      "TaildropTarget": 1,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": true,
+      "KeyExpiry": "2026-08-12T17:48:23Z"
+    }
+  },
+  "User": {
+    "7324756747571594": {
+      "ID": 7324756747571594,
+      "LoginName": "Borjampm@github",
+      "DisplayName": "Borja Márquez de la Plata",
+      "ProfilePicURL": "https://avatars.githubusercontent.com/u/101529986?v=4"
+    }
+  },
+  "ClientVersion": null
+}

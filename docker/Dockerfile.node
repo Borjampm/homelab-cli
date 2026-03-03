@@ -1,0 +1,32 @@
+# ~/cask-lab/docker/Dockerfile.node
+FROM alpine:3.21
+
+# Install SSH server + common tools your scripts might need
+RUN apk add --no-cache \
+    openssh-server \
+    openssh-client \
+    bash \
+    python3 \
+    py3-pip \
+    curl \
+    jq \
+    git \
+    rsync \
+    coreutils \
+    procps \
+    htop
+
+# Configure sshd
+RUN ssh-keygen -A && \
+    mkdir -p /root/.ssh && \
+    chmod 700 /root/.ssh && \
+    sed -i 's/#PermitRootLogin.*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config && \
+    sed -i 's/#PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && \
+    # Allow the SSH control master multiplexing that the `openssh` crate uses
+    sed -i 's/#MaxSessions.*/MaxSessions 20/' /etc/ssh/sshd_config && \
+    echo "StreamLocalBindUnlink yes" >> /etc/ssh/sshd_config
+
+# The authorized_keys file will be mounted at runtime
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D", "-e"]

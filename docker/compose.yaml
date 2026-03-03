@@ -1,0 +1,50 @@
+# ~/cask-lab/docker/compose.yaml
+services:
+  laptop:
+    image: homelab-node
+    container_name: laptop
+    hostname: laptop
+    networks:
+      tailnet:
+        ipv4_address: 172.20.0.10
+    volumes:
+      - ./lab_key.pub:/root/.ssh/authorized_keys:ro
+      - ./scripts:/opt/scripts:ro    # shared scripts directory
+      - ./lab_key:/root/.ssh/id_ed25519:ro
+    ports:
+      - "2210:22"   # accessible from host as localhost:2210
+
+  server:
+    image: homelab-node
+    container_name: server
+    hostname: server
+    networks:
+      tailnet:
+        ipv4_address: 172.20.0.20
+    volumes:
+      - ./lab_key.pub:/root/.ssh/authorized_keys:ro
+      - ./scripts:/opt/scripts:ro
+      - ./lab_key:/root/.ssh/id_ed25519:ro
+    ports:
+      - "2220:22"
+
+  beast:
+    image: homelab-node
+    container_name: beast
+    hostname: beast
+    networks:
+      tailnet:
+        ipv4_address: 172.20.0.30
+    volumes:
+      - ./lab_key.pub:/root/.ssh/authorized_keys:ro
+      - ./scripts:/opt/scripts:ro
+      - ./lab_key:/root/.ssh/id_ed25519:ro
+    ports:
+      - "2230:22"
+
+networks:
+  tailnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
