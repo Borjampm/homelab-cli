@@ -57,9 +57,17 @@ pub async fn run(args: &crate::cli::RunArgs) -> Result<()> {
             .raw_command(&full_setup)
             .status()
             .await
-            .with_context(|| format!("setup command failed to execute: {setup_command}"))?;
-        if !status.success() {
-            anyhow::bail!("setup command failed: {setup_command}");
+            .with_context(|| format!("setup command failed to execute: {setup_command}"));
+        match status {
+            Err(error) => {
+                crate::commands::exec::kill_tunnels(tunnels);
+                return Err(error);
+            }
+            Ok(exit_status) if !exit_status.success() => {
+                crate::commands::exec::kill_tunnels(tunnels);
+                anyhow::bail!("setup command failed: {setup_command}");
+            }
+            Ok(_) => {}
         }
     }
 
