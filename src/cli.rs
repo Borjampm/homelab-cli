@@ -27,7 +27,7 @@ pub struct SyncArgs {
 
 #[derive(Subcommand, Debug)]
 pub enum SyncCommand {
-    /// Push the current directory to a remote host (files matching .gitignore are excluded)
+    /// Push the current directory to a remote host (excludes files matching .gitignore patterns)
     Push(SyncPushArgs),
     /// List synced projects on a remote host
     List(SyncListArgs),

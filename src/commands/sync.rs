@@ -16,8 +16,8 @@ fn build_rsync_command(
     destination: &str,
     include_patterns: &[String],
 ) -> Command {
-    let mut cmd = Command::new("rsync");
-    cmd.arg(local_dir).arg(destination).args([
+    let mut command = Command::new("rsync");
+    command.arg(local_dir).arg(destination).args([
         "--archive",
         "--compress",
         "--delete",
@@ -25,10 +25,10 @@ fn build_rsync_command(
         "--exclude=.git",
     ]);
     for pattern in include_patterns {
-        cmd.arg(format!("--include={pattern}"));
+        command.arg(format!("--include={pattern}"));
     }
-    cmd.arg("--filter=:- .gitignore");
-    cmd
+    command.arg("--filter=:- .gitignore");
+    command
 }
 
 pub fn rsync_to(
@@ -169,8 +169,8 @@ mod tests {
     #[test]
     fn build_rsync_command_includes_all_required_flags() {
         let local = PathBuf::from("/home/user/myapp");
-        let cmd = build_rsync_command(&local, "server:~/projects/", &[]);
-        let args: Vec<_> = cmd
+        let command = build_rsync_command(&local, "server:~/projects/", &[]);
+        let args: Vec<_> = command
             .get_args()
             .map(|a| a.to_string_lossy().to_string())
             .collect();
@@ -185,16 +185,16 @@ mod tests {
     #[test]
     fn build_rsync_command_uses_correct_program() {
         let local = PathBuf::from("/home/user/myapp");
-        let cmd = build_rsync_command(&local, "server:~/projects/", &[]);
-        assert_eq!(cmd.get_program(), "rsync");
+        let command = build_rsync_command(&local, "server:~/projects/", &[]);
+        assert_eq!(command.get_program(), "rsync");
     }
 
     #[test]
     fn build_rsync_command_with_include_patterns() {
         let local = PathBuf::from("/home/user/myapp");
         let include_patterns = vec![".env".to_string(), "secrets.json".to_string()];
-        let cmd = build_rsync_command(&local, "server:~/projects/", &include_patterns);
-        let args: Vec<_> = cmd
+        let command = build_rsync_command(&local, "server:~/projects/", &include_patterns);
+        let args: Vec<_> = command
             .get_args()
             .map(|a| a.to_string_lossy().to_string())
             .collect();
