@@ -133,6 +133,36 @@ mod tests {
     }
 
     #[test]
+    fn extract_users_block_returns_process_list() {
+        let line = "LISTEN 0  128  0.0.0.0:8080  0.0.0.0:*  users:((\"python3\",pid=1234,fd=3))";
+        assert_eq!(extract_users_block(line), Some("\"python3\",pid=1234,fd=3"));
+    }
+
+    #[test]
+    fn extract_users_block_returns_none_without_users() {
+        let line = "LISTEN 0  128  0.0.0.0:8080  0.0.0.0:*";
+        assert_eq!(extract_users_block(line), None);
+    }
+
+    #[test]
+    fn parse_process_entry_extracts_name_and_pid() {
+        let entry = "\"python3\",pid=1234,fd=3";
+        let process = parse_process_entry(entry).unwrap();
+        assert_eq!(process.process_name, "python3");
+        assert_eq!(process.pid, 1234);
+    }
+
+    #[test]
+    fn parse_process_entry_returns_none_for_incomplete_entry() {
+        assert!(parse_process_entry("\"python3\"").is_none());
+    }
+
+    #[test]
+    fn parse_process_entry_returns_none_without_pid_field() {
+        assert!(parse_process_entry("\"python3\",fd=3").is_none());
+    }
+
+    #[test]
     fn parse_ss_output_extracts_single_process() {
         let output = "\
 State  Recv-Q Send-Q Local Address:Port  Peer Address:Port Process
