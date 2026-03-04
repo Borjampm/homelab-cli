@@ -32,10 +32,7 @@ fn prompt_user_to_kill(port: u16, processes: &[super::port::PortProcess]) -> boo
     use std::io::Write;
 
     for process in processes {
-        eprintln!(
-            "port {} is in use by {} (PID {})",
-            port, process.process_name, process.pid
-        );
+        eprintln!("port {port} is in use by {process}");
     }
     eprint!("kill and continue? [y/N] ");
     std::io::stderr().flush().ok();
@@ -67,7 +64,7 @@ pub async fn run(args: &crate::cli::RunArgs) -> Result<()> {
         let processes = super::port::check_port(&session, port).await?;
         if !processes.is_empty() {
             if prompt_user_to_kill(port, &processes) {
-                super::port::kill_port(&session, port).await?;
+                super::port::kill_processes(&session, &processes).await?;
                 info!(port, "killed processes using port");
             } else {
                 anyhow::bail!("port {port} is in use, aborting");

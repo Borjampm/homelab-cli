@@ -113,27 +113,17 @@ pub struct PortArgs {
 #[derive(Subcommand, Debug)]
 pub enum PortCommand {
     /// Check what process is using a port on a remote host
-    Check(PortCheckArgs),
+    Check(PortTargetArgs),
     /// Kill the process using a port on a remote host
-    Kill(PortKillArgs),
+    Kill(PortTargetArgs),
 }
 
 #[derive(Args, Debug)]
-pub struct PortCheckArgs {
-    /// Host to check
+pub struct PortTargetArgs {
+    /// Remote host to manage
     #[arg(long = "on")]
     pub on_host: String,
 
-    /// Port number to check
-    pub port: u16,
-}
-
-#[derive(Args, Debug)]
-pub struct PortKillArgs {
-    /// Host to kill the process on
-    #[arg(long = "on")]
-    pub on_host: String,
-
-    /// Port number to free
+    /// Port number
     pub port: u16,
 }

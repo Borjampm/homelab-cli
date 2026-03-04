@@ -7,7 +7,15 @@ fn start_remote_server(port: u16) {
     ssh_command_on_server(&format!(
         "nohup python3 -m http.server {port} > /dev/null 2>&1 &"
     ));
-    std::thread::sleep(std::time::Duration::from_millis(500));
+    for _ in 0..20 {
+        std::thread::sleep(std::time::Duration::from_millis(250));
+        let output = ssh_command_on_server(&format!("ss -tlnp 'sport = :{port}'"));
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if stdout.contains(&format!(":{port}")) {
+            return;
+        }
+    }
+    panic!("remote server not listening on port {port} after 5 seconds");
 }
 
 fn kill_remote_server(port: u16) {

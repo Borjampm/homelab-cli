@@ -1,9 +1,17 @@
+use std::fmt;
+
 use anyhow::{Context, Result};
 use openssh::{KnownHosts, Session};
 
 pub struct PortProcess {
     pub pid: u32,
     pub process_name: String,
+}
+
+impl fmt::Display for PortProcess {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{} (PID {})", self.process_name, self.pid)
+    }
 }
 
 fn build_port_check_command(port: u16) -> String {
@@ -61,9 +69,8 @@ pub async fn check_port(session: &Session, port: u16) -> Result<Vec<PortProcess>
     Ok(parse_ss_output(&stdout))
 }
 
-pub async fn kill_port(session: &Session, port: u16) -> Result<Vec<PortProcess>> {
-    let processes = check_port(session, port).await?;
-    for process in &processes {
+pub async fn kill_processes(session: &Session, processes: &[PortProcess]) -> Result<()> {
+    for process in processes {
         let kill_command = build_port_kill_command(process.pid);
         session
             .raw_command(&kill_command)
@@ -71,51 +78,53 @@ pub async fn kill_port(session: &Session, port: u16) -> Result<Vec<PortProcess>>
             .await
             .with_context(|| format!("failed to kill PID {}", process.pid))?;
     }
-    Ok(processes)
-}
-
-pub async fn run_check(args: &crate::cli::PortCheckArgs) -> Result<()> {
-    let session = Session::connect(&args.on_host, KnownHosts::Strict)
-        .await
-        .with_context(|| format!("failed to connect to {}", args.on_host))?;
-
-    let processes = check_port(&session, args.port).await?;
-    let _ = tokio::time::timeout(std::time::Duration::from_secs(2), session.close()).await;
-
-    if processes.is_empty() {
-        println!("port {} is free on {}", args.port, args.on_host);
-    } else {
-        for process in &processes {
-            println!(
-                "port {} is in use by {} (PID {})",
-                args.port, process.process_name, process.pid
-            );
-        }
-    }
-
     Ok(())
 }
 
-pub async fn run_kill(args: &crate::cli::PortKillArgs) -> Result<()> {
-    let session = Session::connect(&args.on_host, KnownHosts::Strict)
+async fn with_session<F, Fut>(host: &str, operation: F) -> Result<()>
+where
+    F: FnOnce(Session) -> Fut,
+    Fut: std::future::Future<Output = Result<()>>,
+{
+    let session = Session::connect(host, KnownHosts::Strict)
         .await
-        .with_context(|| format!("failed to connect to {}", args.on_host))?;
+        .with_context(|| format!("failed to connect to {host}"))?;
+    operation(session).await
+}
 
-    let killed = kill_port(&session, args.port).await?;
-    let _ = tokio::time::timeout(std::time::Duration::from_secs(2), session.close()).await;
+pub async fn run_check(args: &crate::cli::PortTargetArgs) -> Result<()> {
+    with_session(&args.on_host, |session| async move {
+        let processes = check_port(&session, args.port).await?;
+        let _ = tokio::time::timeout(std::time::Duration::from_secs(2), session.close()).await;
 
-    if killed.is_empty() {
-        println!("port {} is already free on {}", args.port, args.on_host);
-    } else {
-        for process in &killed {
-            println!(
-                "killed {} (PID {}) on port {}",
-                process.process_name, process.pid, args.port
-            );
+        if processes.is_empty() {
+            println!("port {} is free on {}", args.port, args.on_host);
+        } else {
+            for process in &processes {
+                println!("port {} is in use by {process}", args.port);
+            }
         }
-    }
+        Ok(())
+    })
+    .await
+}
 
-    Ok(())
+pub async fn run_kill(args: &crate::cli::PortTargetArgs) -> Result<()> {
+    with_session(&args.on_host, |session| async move {
+        let processes = check_port(&session, args.port).await?;
+        kill_processes(&session, &processes).await?;
+        let _ = tokio::time::timeout(std::time::Duration::from_secs(2), session.close()).await;
+
+        if processes.is_empty() {
+            println!("port {} is already free on {}", args.port, args.on_host);
+        } else {
+            for process in &processes {
+                println!("killed {process} on port {}", args.port);
+            }
+        }
+        Ok(())
+    })
+    .await
 }
 
 #[cfg(test)]
