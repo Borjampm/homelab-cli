@@ -28,6 +28,23 @@ fn build_setup_command(remote_base: &str, project_name: &str, setup_command: &st
     format!("cd {remote_base}{project_name} && {setup_command}")
 }
 
+fn prompt_user_to_kill(port: u16, processes: &[super::port::PortProcess]) -> bool {
+    use std::io::Write;
+
+    for process in processes {
+        eprintln!(
+            "port {} is in use by {} (PID {})",
+            port, process.process_name, process.pid
+        );
+    }
+    eprint!("kill and continue? [y/N] ");
+    std::io::stderr().flush().ok();
+
+    let mut answer = String::new();
+    std::io::stdin().read_line(&mut answer).ok();
+    answer.trim().eq_ignore_ascii_case("y")
+}
+
 fn build_kill_command(command: &[String]) -> String {
     let pattern = command.join(" ");
     format!("pkill -f '{pattern}' 2>/dev/null; true")
@@ -45,6 +62,18 @@ pub async fn run(args: &crate::cli::RunArgs) -> Result<()> {
     let session = Session::connect(host, KnownHosts::Strict)
         .await
         .with_context(|| format!("failed to connect to {host}"))?;
+
+    for &port in &args.remote.forward {
+        let processes = super::port::check_port(&session, port).await?;
+        if !processes.is_empty() {
+            if prompt_user_to_kill(port, &processes) {
+                super::port::kill_port(&session, port).await?;
+                info!(port, "killed processes using port");
+            } else {
+                anyhow::bail!("port {port} is in use, aborting");
+            }
+        }
+    }
 
     let tunnels = crate::commands::exec::spawn_port_forwards(host, &args.remote.forward)?;
 

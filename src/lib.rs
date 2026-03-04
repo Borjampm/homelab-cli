@@ -19,5 +19,9 @@ pub async fn run() -> Result<()> {
         },
         cli::Command::Exec(args) => commands::exec::run(&args).await,
         cli::Command::Run(args) => commands::run::run(&args).await,
+        cli::Command::Port(args) => match args.command {
+            cli::PortCommand::Check(check_args) => commands::port::run_check(&check_args).await,
+            cli::PortCommand::Kill(kill_args) => commands::port::run_kill(&kill_args).await,
+        },
     }
 }

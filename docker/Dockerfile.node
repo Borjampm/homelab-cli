@@ -14,7 +14,8 @@ RUN apk add --no-cache \
     rsync \
     coreutils \
     procps \
-    htop
+    htop \
+    iproute2
 
 # Configure sshd
 RUN ssh-keygen -A && \
