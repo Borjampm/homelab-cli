@@ -17,6 +17,8 @@ pub enum Command {
     Exec(ExecArgs),
     /// Sync the current project and run a command on a remote host
     Run(RunArgs),
+    /// Manage ports on remote hosts
+    Port(PortArgs),
 }
 
 #[derive(Args, Debug)]
@@ -100,4 +102,28 @@ pub struct RunArgs {
     /// Include specific files that would otherwise be excluded by .gitignore
     #[arg(long = "include")]
     pub include_patterns: Vec<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct PortArgs {
+    #[command(subcommand)]
+    pub command: PortCommand,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum PortCommand {
+    /// Check what process is using a port on a remote host
+    Check(PortTargetArgs),
+    /// Kill the process using a port on a remote host
+    Kill(PortTargetArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct PortTargetArgs {
+    /// Remote host to manage
+    #[arg(long = "on")]
+    pub on_host: String,
+
+    /// Port number
+    pub port: u16,
 }
