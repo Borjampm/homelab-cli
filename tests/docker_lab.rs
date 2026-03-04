@@ -205,6 +205,52 @@ fn sync_remove_deletes_project() {
     );
 }
 
+#[test]
+fn sync_push_includes_gitignored_file_when_include_flag_used() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[
+        (".gitignore", ".env\n"),
+        (".env", "SECRET_KEY=test123"),
+        ("app.txt", "main app file"),
+    ]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut without_include = homelab_command();
+    without_include
+        .args(["sync", "push", "--to", "server"])
+        .current_dir(project.path())
+        .assert()
+        .success();
+
+    let env_check = ssh_command_on_server(&format!(
+        "test -f ~/remote-synced-projects/{project_name}/.env"
+    ));
+    assert!(
+        !env_check.status.success(),
+        ".env should NOT be synced without --include"
+    );
+
+    let mut with_include = homelab_command();
+    with_include
+        .args(["sync", "push", "--to", "server", "--include", ".env"])
+        .current_dir(project.path())
+        .assert()
+        .success();
+
+    let env_check =
+        ssh_command_on_server(&format!("cat ~/remote-synced-projects/{project_name}/.env"));
+    let remote_content = String::from_utf8_lossy(&env_check.stdout);
+    assert_eq!(remote_content.trim(), "SECRET_KEY=test123");
+
+    cleanup_remote_project(&project_name);
+}
+
 // --- Run Tests ---
 
 #[test]

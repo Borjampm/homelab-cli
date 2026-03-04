@@ -11,7 +11,11 @@ fn build_rsync_destination(host: &str, remote_base: &str) -> String {
     format!("{host}:{remote_base}")
 }
 
-fn build_rsync_command(local_dir: &Path, destination: &str) -> Command {
+fn build_rsync_command(
+    local_dir: &Path,
+    destination: &str,
+    include_patterns: &[String],
+) -> Command {
     let mut cmd = Command::new("rsync");
     cmd.arg(local_dir).arg(destination).args([
         "--archive",
@@ -19,12 +23,20 @@ fn build_rsync_command(local_dir: &Path, destination: &str) -> Command {
         "--delete",
         "--info=progress2",
         "--exclude=.git",
-        "--filter=:- .gitignore",
     ]);
+    for pattern in include_patterns {
+        cmd.arg(format!("--include={pattern}"));
+    }
+    cmd.arg("--filter=:- .gitignore");
     cmd
 }
 
-pub fn rsync_to(host: &str, local_dir: &Path, remote_base: &str) -> Result<()> {
+pub fn rsync_to(
+    host: &str,
+    local_dir: &Path,
+    remote_base: &str,
+    include_patterns: &[String],
+) -> Result<()> {
     let destination = build_rsync_destination(host, remote_base);
 
     tracing::info!(
@@ -33,7 +45,7 @@ pub fn rsync_to(host: &str, local_dir: &Path, remote_base: &str) -> Result<()> {
         destination
     );
 
-    let status = build_rsync_command(local_dir, &destination)
+    let status = build_rsync_command(local_dir, &destination, include_patterns)
         .status()
         .context("failed to run rsync")?;
 
@@ -44,7 +56,12 @@ pub fn rsync_to(host: &str, local_dir: &Path, remote_base: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn watch_and_sync(host: &str, local_dir: &Path, remote_base: &str) -> Result<()> {
+pub fn watch_and_sync(
+    host: &str,
+    local_dir: &Path,
+    remote_base: &str,
+    include_patterns: &[String],
+) -> Result<()> {
     let (tx, rx) = mpsc::channel::<DebounceEventResult>();
 
     let mut debouncer =
@@ -58,7 +75,7 @@ pub fn watch_and_sync(host: &str, local_dir: &Path, remote_base: &str) -> Result
     loop {
         match rx.recv() {
             Ok(Ok(_events)) => {
-                if let Err(e) = rsync_to(host, local_dir, remote_base) {
+                if let Err(e) = rsync_to(host, local_dir, remote_base, include_patterns) {
                     error!(error = %e, "sync failed");
                 }
             }
@@ -76,14 +93,24 @@ pub async fn push(args: &crate::cli::SyncPushArgs) -> Result<()> {
     let local_dir = std::env::current_dir().context("cannot determine current directory")?;
     let remote_base = crate::REMOTE_SYNCED_BASE_PATH;
 
-    rsync_to(&args.to_host, &local_dir, remote_base)?;
+    rsync_to(
+        &args.to_host,
+        &local_dir,
+        remote_base,
+        &args.include_patterns,
+    )?;
 
     if !args.watch {
         return Ok(());
     }
 
     info!("watching for changes, press Ctrl+C to stop");
-    watch_and_sync(&args.to_host, &local_dir, remote_base)?;
+    watch_and_sync(
+        &args.to_host,
+        &local_dir,
+        remote_base,
+        &args.include_patterns,
+    )?;
 
     Ok(())
 }
@@ -142,7 +169,7 @@ mod tests {
     #[test]
     fn build_rsync_command_includes_all_required_flags() {
         let local = PathBuf::from("/home/user/myapp");
-        let cmd = build_rsync_command(&local, "server:~/projects/");
+        let cmd = build_rsync_command(&local, "server:~/projects/", &[]);
         let args: Vec<_> = cmd
             .get_args()
             .map(|a| a.to_string_lossy().to_string())
@@ -158,7 +185,37 @@ mod tests {
     #[test]
     fn build_rsync_command_uses_correct_program() {
         let local = PathBuf::from("/home/user/myapp");
-        let cmd = build_rsync_command(&local, "server:~/projects/");
+        let cmd = build_rsync_command(&local, "server:~/projects/", &[]);
         assert_eq!(cmd.get_program(), "rsync");
+    }
+
+    #[test]
+    fn build_rsync_command_with_include_patterns() {
+        let local = PathBuf::from("/home/user/myapp");
+        let include_patterns = vec![".env".to_string(), "secrets.json".to_string()];
+        let cmd = build_rsync_command(&local, "server:~/projects/", &include_patterns);
+        let args: Vec<_> = cmd
+            .get_args()
+            .map(|a| a.to_string_lossy().to_string())
+            .collect();
+
+        let include_env_pos = args.iter().position(|a| a == "--include=.env").unwrap();
+        let include_secrets_pos = args
+            .iter()
+            .position(|a| a == "--include=secrets.json")
+            .unwrap();
+        let filter_pos = args
+            .iter()
+            .position(|a| a == "--filter=:- .gitignore")
+            .unwrap();
+
+        assert!(
+            include_env_pos < filter_pos,
+            "--include=.env must come before --filter"
+        );
+        assert!(
+            include_secrets_pos < filter_pos,
+            "--include=secrets.json must come before --filter"
+        );
     }
 }

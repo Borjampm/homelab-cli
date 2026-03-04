@@ -27,7 +27,7 @@ pub struct SyncArgs {
 
 #[derive(Subcommand, Debug)]
 pub enum SyncCommand {
-    /// Push the current directory to a remote host
+    /// Push the current directory to a remote host (files matching .gitignore are excluded)
     Push(SyncPushArgs),
     /// List synced projects on a remote host
     List(SyncListArgs),
@@ -44,6 +44,10 @@ pub struct SyncPushArgs {
     /// Watch for file changes and re-sync automatically
     #[arg(long)]
     pub watch: bool,
+
+    /// Include specific files that would otherwise be excluded by .gitignore
+    #[arg(long = "include")]
+    pub include_patterns: Vec<String>,
 }
 
 #[derive(Args, Debug)]
@@ -92,4 +96,8 @@ pub struct RunArgs {
     /// Commands to run once after sync but before the main command
     #[arg(long = "setup")]
     pub setup_commands: Vec<String>,
+
+    /// Include specific files that would otherwise be excluded by .gitignore
+    #[arg(long = "include")]
+    pub include_patterns: Vec<String>,
 }
