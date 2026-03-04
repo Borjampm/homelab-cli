@@ -39,7 +39,7 @@ pub async fn run(args: &crate::cli::RunArgs) -> Result<()> {
     let host = &args.remote.on_host;
 
     info!("initial sync");
-    crate::commands::sync::rsync_to(host, &local_dir, remote_base)?;
+    crate::commands::sync::rsync_to(host, &local_dir, remote_base, &args.include_patterns)?;
 
     info!(host = %host, "connecting via SSH");
     let session = Session::connect(host, KnownHosts::Strict)
@@ -78,10 +78,14 @@ pub async fn run(args: &crate::cli::RunArgs) -> Result<()> {
     let watcher_host = host.to_owned();
     let watcher_dir = local_dir.clone();
     let watcher_base = remote_base.to_owned();
+    let watcher_include_patterns = args.include_patterns.clone();
     std::thread::spawn(move || {
-        if let Err(e) =
-            crate::commands::sync::watch_and_sync(&watcher_host, &watcher_dir, &watcher_base)
-        {
+        if let Err(e) = crate::commands::sync::watch_and_sync(
+            &watcher_host,
+            &watcher_dir,
+            &watcher_base,
+            &watcher_include_patterns,
+        ) {
             tracing::error!(error = %e, "watcher stopped with error");
         }
     });
