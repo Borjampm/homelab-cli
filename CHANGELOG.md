@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8](https://github.com/Borjampm/homelab-cli/compare/v0.1.7...v0.1.8) - 2026-03-04
+
+### Added
+
+- add --include flag to override .gitignore exclusions in sync
+
+### Other
+
+- Merge pull request #12 from Borjampm/add-include-flag-to-sync
+- address PR review comments
+
 ## [0.1.7](https://github.com/Borjampm/homelab-cli/compare/v0.1.6...v0.1.7) - 2026-03-03
 
 ### Fixed
