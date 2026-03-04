@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.9](https://github.com/Borjampm/homelab-cli/compare/v0.1.8...v0.1.9) - 2026-03-04
+
+### Added
+
+- add port management commands and auto-check in run
+
+### Fixed
+
+- ensure Docker lab is running before SSH commands in port tests
+
+### Other
+
+- replace atexit Docker teardown with justfile test recipe
+- simplify port module by removing duplication
+- add unit tests for extract_users_block and parse_process_entry
+- break down parse_ss_output into smaller functions
+
 ## [0.1.8](https://github.com/Borjampm/homelab-cli/compare/v0.1.7...v0.1.8) - 2026-03-04
 
 ### Added
