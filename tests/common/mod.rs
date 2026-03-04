@@ -6,8 +6,6 @@ use std::sync::Once;
 
 use tempfile::TempDir;
 
-extern crate libc;
-
 pub static DOCKER_LAB_STARTED: Once = Once::new();
 
 pub const COMPOSE_FILE: &str = "docker/compose.yaml";
@@ -99,13 +97,6 @@ pub fn update_known_hosts() {
     std::fs::write(&known_hosts_path, final_content).expect("failed to write known_hosts");
 }
 
-extern "C" fn shutdown_docker_lab() {
-    let _ = Command::new("docker")
-        .args(["compose", "-f", COMPOSE_FILE, "down"])
-        .current_dir(project_root())
-        .status();
-}
-
 pub fn ensure_docker_lab_running() {
     DOCKER_LAB_STARTED.call_once(|| {
         let compose_status = Command::new("docker")
@@ -118,10 +109,6 @@ pub fn ensure_docker_lab_running() {
 
         wait_for_ssh_ready();
         update_known_hosts();
-
-        unsafe {
-            libc::atexit(shutdown_docker_lab);
-        }
     });
 }
 
