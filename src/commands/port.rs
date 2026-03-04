@@ -14,45 +14,40 @@ fn build_port_kill_command(pid: u32) -> String {
     format!("kill {pid}")
 }
 
-fn parse_ss_output(output: &str) -> Vec<PortProcess> {
-    let mut processes = Vec::new();
+fn extract_users_block(line: &str) -> Option<&str> {
+    let rest = &line[line.find("users:((")? + 8..];
+    let end = rest.find("))")?;
+    Some(&rest[..end])
+}
 
-    for line in output.lines().skip(1) {
-        let Some(users_start) = line.find("users:((") else {
-            continue;
-        };
-        let rest = &line[users_start + 8..];
-        let Some(users_end) = rest.find("))") else {
-            continue;
-        };
-        let users_block = &rest[..users_end];
-
-        for entry in users_block.split("),(") {
-            let fields: Vec<&str> = entry.split(',').collect();
-            if fields.len() < 2 {
-                continue;
-            }
-
-            let process_name = fields[0].trim_matches('"');
-
-            let Some(pid_field) = fields.iter().find(|field| field.starts_with("pid=")) else {
-                continue;
-            };
-            let Some(pid) = pid_field
-                .strip_prefix("pid=")
-                .and_then(|value| value.parse().ok())
-            else {
-                continue;
-            };
-
-            processes.push(PortProcess {
-                pid,
-                process_name: process_name.to_string(),
-            });
-        }
+fn parse_process_entry(entry: &str) -> Option<PortProcess> {
+    let fields: Vec<&str> = entry.split(',').collect();
+    if fields.len() < 2 {
+        return None;
     }
 
-    processes
+    let process_name = fields[0].trim_matches('"');
+    let pid = fields
+        .iter()
+        .find(|field| field.starts_with("pid="))?
+        .strip_prefix("pid=")?
+        .parse()
+        .ok()?;
+
+    Some(PortProcess {
+        pid,
+        process_name: process_name.to_string(),
+    })
+}
+
+fn parse_ss_output(output: &str) -> Vec<PortProcess> {
+    output
+        .lines()
+        .skip(1)
+        .filter_map(extract_users_block)
+        .flat_map(|block| block.split("),("))
+        .filter_map(parse_process_entry)
+        .collect()
 }
 
 pub async fn check_port(session: &Session, port: u16) -> Result<Vec<PortProcess>> {
