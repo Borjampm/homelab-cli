@@ -81,7 +81,7 @@ fn exec_in_directory() {
     let mut command = homelab_command();
 
     command
-        .args(["exec", "--on", "server", "--in", "/tmp", "--", "pwd"])
+        .args(["exec", "--on", "server", "--dir", "/tmp", "--", "pwd"])
         .assert()
         .success()
         .stdout(predicate::str::contains("/tmp"));
@@ -97,7 +97,7 @@ fn exec_in_nonexistent_directory_fails() {
             "exec",
             "--on",
             "server",
-            "--in",
+            "--dir",
             "/nonexistent_dir_xyz",
             "--",
             "pwd",
@@ -119,7 +119,7 @@ fn exec_in_directory_with_spaces() {
             "exec",
             "--on",
             "server",
-            "--in",
+            "--dir",
             "/tmp/path with spaces",
             "--",
             "pwd",
@@ -141,7 +141,7 @@ fn exec_in_directory_runs_command_in_that_directory() {
             "exec",
             "--on",
             "server",
-            "--in",
+            "--dir",
             "/etc",
             "--",
             "cat",
@@ -711,7 +711,7 @@ fn run_in_subdirectory() {
             "run",
             "--on",
             "server",
-            "--in",
+            "--dir",
             "subdir",
             "--",
             "sh",
@@ -745,7 +745,7 @@ fn run_in_nonexistent_subdirectory_fails() {
             "run",
             "--on",
             "server",
-            "--in",
+            "--dir",
             "nonexistent",
             "--",
             "echo",
@@ -776,7 +776,7 @@ fn run_in_subdirectory_with_setup() {
             "run",
             "--on",
             "server",
-            "--in",
+            "--dir",
             "subdir",
             "--setup",
             "echo 'setup-ran-here' > setup.txt",
