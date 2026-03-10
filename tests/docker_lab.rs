@@ -75,6 +75,83 @@ fn exec_sources_bashrc() {
     ssh_command_on_server("sed -i '/HOMELAB_TEST_VAR/d' /root/.bashrc");
 }
 
+#[test]
+fn exec_in_directory() {
+    require_docker_lab!();
+    let mut command = homelab_command();
+
+    command
+        .args(["exec", "--on", "server", "--dir", "/tmp", "--", "pwd"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("/tmp"));
+}
+
+#[test]
+fn exec_in_nonexistent_directory_fails() {
+    require_docker_lab!();
+    let mut command = homelab_command();
+
+    command
+        .args([
+            "exec",
+            "--on",
+            "server",
+            "--dir",
+            "/nonexistent_dir_xyz",
+            "--",
+            "pwd",
+        ])
+        .assert()
+        .failure();
+}
+
+#[test]
+fn exec_in_directory_with_spaces() {
+    require_docker_lab!();
+    ensure_docker_lab_running();
+
+    ssh_command_on_server("mkdir -p '/tmp/path with spaces'");
+
+    let mut command = homelab_command();
+    command
+        .args([
+            "exec",
+            "--on",
+            "server",
+            "--dir",
+            "/tmp/path with spaces",
+            "--",
+            "pwd",
+        ])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("/tmp/path with spaces"));
+
+    ssh_command_on_server("rm -rf '/tmp/path with spaces'");
+}
+
+#[test]
+fn exec_in_directory_runs_command_in_that_directory() {
+    require_docker_lab!();
+    let mut command = homelab_command();
+
+    command
+        .args([
+            "exec",
+            "--on",
+            "server",
+            "--dir",
+            "/etc",
+            "--",
+            "cat",
+            "hostname",
+        ])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("server"));
+}
+
 // --- Sync Tests ---
 
 #[test]
@@ -612,6 +689,108 @@ fn run_command_not_found() {
         .current_dir(project.path())
         .assert()
         .failure();
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_in_subdirectory() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[("subdir/show_dir.sh", "#!/bin/sh\npwd")]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args([
+            "run",
+            "--on",
+            "server",
+            "--dir",
+            "subdir",
+            "--",
+            "sh",
+            "show_dir.sh",
+        ])
+        .current_dir(project.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&format!(
+            "{project_name}/subdir"
+        )));
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_in_nonexistent_subdirectory_fails() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[("dummy.txt", "placeholder")]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args([
+            "run",
+            "--on",
+            "server",
+            "--dir",
+            "nonexistent",
+            "--",
+            "echo",
+            "should not run",
+        ])
+        .current_dir(project.path())
+        .assert()
+        .failure();
+
+    cleanup_remote_project(&project_name);
+}
+
+#[test]
+fn run_in_subdirectory_with_setup() {
+    require_docker_lab!();
+
+    let project = create_temp_project(&[("subdir/check.sh", "#!/bin/sh\npwd && cat setup.txt")]);
+    let project_name = project
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let mut command = homelab_command();
+    command
+        .args([
+            "run",
+            "--on",
+            "server",
+            "--dir",
+            "subdir",
+            "--setup",
+            "echo 'setup-ran-here' > setup.txt",
+            "--",
+            "sh",
+            "check.sh",
+        ])
+        .current_dir(project.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&format!(
+            "{project_name}/subdir"
+        )))
+        .stdout(predicate::str::contains("setup-ran-here"));
 
     cleanup_remote_project(&project_name);
 }

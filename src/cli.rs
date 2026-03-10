@@ -75,6 +75,10 @@ pub struct RemoteCommandArgs {
     #[arg(long = "on")]
     pub on_host: String,
 
+    /// Directory to run the command in on the remote host
+    #[arg(long = "dir")]
+    pub in_directory: Option<String>,
+
     /// Local ports to forward to the remote host via SSH
     #[arg(long = "forward")]
     pub forward: Vec<u16>,
