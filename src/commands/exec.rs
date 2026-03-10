@@ -29,13 +29,17 @@ pub async fn run(args: &crate::cli::ExecArgs) -> Result<()> {
 
     let tunnels = spawn_port_forwards(&args.remote.on_host, &args.remote.forward)?;
 
-    let full_command = args
+    let escaped_command = args
         .remote
         .command
         .iter()
         .map(|arg| shell_escape::escape(arg.into()))
         .collect::<Vec<_>>()
         .join(" ");
+    let full_command = match &args.remote.in_directory {
+        Some(directory) => format!("cd {} && {escaped_command}", shell_escape::escape(directory.into())),
+        None => escaped_command,
+    };
     let interactive_command = super::wrap_in_interactive_shell(&full_command);
     let status = session.raw_command(&interactive_command).status().await?;
 

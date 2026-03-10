@@ -17,15 +17,38 @@ fn shell_escape_command(command: &[String]) -> String {
         .join(" ")
 }
 
-fn build_remote_command(remote_base: &str, project_name: &str, command: &[String]) -> String {
+fn build_working_directory(
+    remote_base: &str,
+    project_name: &str,
+    in_directory: Option<&str>,
+) -> String {
+    match in_directory {
+        Some(directory) => format!("{remote_base}{project_name}/{directory}"),
+        None => format!("{remote_base}{project_name}"),
+    }
+}
+
+fn build_remote_command(
+    remote_base: &str,
+    project_name: &str,
+    in_directory: Option<&str>,
+    command: &[String],
+) -> String {
+    let working_directory = build_working_directory(remote_base, project_name, in_directory);
     format!(
-        "cd {remote_base}{project_name} && {}",
+        "cd {working_directory} && {}",
         shell_escape_command(command)
     )
 }
 
-fn build_setup_command(remote_base: &str, project_name: &str, setup_command: &str) -> String {
-    format!("cd {remote_base}{project_name} && {setup_command}")
+fn build_setup_command(
+    remote_base: &str,
+    project_name: &str,
+    in_directory: Option<&str>,
+    setup_command: &str,
+) -> String {
+    let working_directory = build_working_directory(remote_base, project_name, in_directory);
+    format!("cd {working_directory} && {setup_command}")
 }
 
 fn build_kill_command(command: &[String]) -> String {
@@ -51,7 +74,7 @@ pub async fn run(args: &crate::cli::RunArgs) -> Result<()> {
     let project_name = project_name_from_path(&local_dir)?;
 
     for setup_command in &args.setup_commands {
-        let full_setup = build_setup_command(remote_base, &project_name, setup_command);
+        let full_setup = build_setup_command(remote_base, &project_name, args.remote.in_directory.as_deref(), setup_command);
         let interactive_setup = super::wrap_in_interactive_shell(&full_setup);
         info!(command = %full_setup, "running setup command");
         let status = session
@@ -72,7 +95,7 @@ pub async fn run(args: &crate::cli::RunArgs) -> Result<()> {
         }
     }
 
-    let full_command = build_remote_command(remote_base, &project_name, &args.remote.command);
+    let full_command = build_remote_command(remote_base, &project_name, args.remote.in_directory.as_deref(), &args.remote.command);
     let interactive_command = super::wrap_in_interactive_shell(&full_command);
 
     let watcher_host = host.to_owned();
@@ -135,6 +158,7 @@ mod tests {
         let cmd = build_remote_command(
             "~/projects/",
             "myapp",
+            None,
             &["cargo".into(), "run".into(), "--release".into()],
         );
         assert_eq!(cmd, "cd ~/projects/myapp && cargo run --release");
@@ -142,7 +166,7 @@ mod tests {
 
     #[test]
     fn build_remote_command_with_single_arg() {
-        let cmd = build_remote_command("~/projects/", "myapp", &["ls".into()]);
+        let cmd = build_remote_command("~/projects/", "myapp", None, &["ls".into()]);
         assert_eq!(cmd, "cd ~/projects/myapp && ls");
     }
 
@@ -151,9 +175,21 @@ mod tests {
         let cmd = build_remote_command(
             "~/base/",
             "proj",
+            None,
             &["echo".into(), "a".into(), "b".into(), "c".into()],
         );
         assert_eq!(cmd, "cd ~/base/proj && echo a b c");
+    }
+
+    #[test]
+    fn build_remote_command_with_in_directory() {
+        let cmd = build_remote_command(
+            "~/projects/",
+            "myapp",
+            Some("src/backend"),
+            &["cargo".into(), "run".into()],
+        );
+        assert_eq!(cmd, "cd ~/projects/myapp/src/backend && cargo run");
     }
 
     #[test]
@@ -173,6 +209,7 @@ mod tests {
         let cmd = build_remote_command(
             "~/projects/",
             "myapp",
+            None,
             &[
                 "python3".into(),
                 "-c".into(),
@@ -207,7 +244,7 @@ mod tests {
 
     #[test]
     fn build_setup_command_produces_cd_and_command() {
-        let cmd = build_setup_command("~/projects/", "myapp", "yarn install");
+        let cmd = build_setup_command("~/projects/", "myapp", None, "yarn install");
         assert_eq!(cmd, "cd ~/projects/myapp && yarn install");
     }
 
@@ -216,11 +253,18 @@ mod tests {
         let cmd = build_setup_command(
             "~/projects/",
             "myapp",
+            None,
             "pip install -r requirements.txt && echo done",
         );
         assert_eq!(
             cmd,
             "cd ~/projects/myapp && pip install -r requirements.txt && echo done"
         );
+    }
+
+    #[test]
+    fn build_setup_command_with_in_directory() {
+        let cmd = build_setup_command("~/projects/", "myapp", Some("frontend"), "npm install");
+        assert_eq!(cmd, "cd ~/projects/myapp/frontend && npm install");
     }
 }
